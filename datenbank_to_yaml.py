@@ -11,7 +11,7 @@ yaml_dict = {}
 if len(sys.argv) != 2:
     sys.stderr.write("Usage: {0} <file>.xml".format(sys.argv[0]))
 
-def count_all_types(yaml_dict):
+def count_all_data_types(yaml_dict):
     for key in yaml_dict.keys():
         print(f"{key}:{len(yaml_dict[key])}")
     all_keys = []
@@ -21,15 +21,16 @@ def count_all_types(yaml_dict):
 
 def add_type(yaml_dict):
     for talent in yaml_dict["Talent"]:
-        any_fertigkeit_of_talent = talent["fertigkeiten"].split(",")[0]
-    if talent["fertigkeiten"]:
-        for fertigkeit in yaml_dict["Übernatürliche-Fertigkeit"]:
-            if fertigkeit["name"] == any_fertigkeit_of_talent:
-                for einstellung in yaml_dict["Einstellung"]:
-                    if einstellung["name"] == "Fertigkeiten: Typen übernatürlich":
-                        talent["typ"] = einstellung["inhalt"].split(",")[int(fertigkeit["printclass"])]
-                        break
-                break
+        talent_fertigkeiten = [fertigkeit.strip() for fertigkeit in yaml_dict["Talent"][talent]["fertigkeiten"].split(",")]
+        fertigkeit_typen = []
+        for fertigkeit in talent_fertigkeiten:
+            fertigkeit_dict = yaml_dict["Übernatürliche-Fertigkeit"].get(fertigkeit)
+            if fertigkeit_dict:
+                fertigkeit_typ_nummer = int(fertigkeit_dict["printclass"])
+                fertigkeits_typen_uebernatuerlich_list = [fertigkeit_typ.strip() for fertigkeit_typ in yaml_dict["Einstellung"]["Fertigkeiten: Typen übernatürlich"]["inhalt"].split(",")]
+                fertigkeit_typ = fertigkeits_typen_uebernatuerlich_list[fertigkeit_typ_nummer]
+                fertigkeit_typen.append(fertigkeit_typ)
+        yaml_dict["Talent"][talent]["typ"] = fertigkeit_typen
     #else:
     #    talent["Typ"] = yaml_dict["Einstellung"]["Fertigkeiten: Typen profan"][int(talent["fertigkeiten"].split(",")[0]["printclass"])]
 
@@ -63,6 +64,8 @@ with open(sys.argv[1]) as xmlf:
     tree = ET.parse(xmlf)
 
 yaml_dict = yaml_out(tree.getroot())
+
+add_type(yaml_dict)
 
 with open(sys.argv[1]+".yml", 'w+',encoding="utf-8") as file:
     documents = yaml.safe_dump(yaml_dict, file,allow_unicode=True)
