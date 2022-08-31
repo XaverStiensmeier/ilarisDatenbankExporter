@@ -20,19 +20,24 @@ def count_all_data_types(yaml_dict):
     print(" "*5 + f"{list(all_keys)}")
 
 def add_type(yaml_dict):
-    for talent in yaml_dict["Talent"]:
-        talent_fertigkeiten = [fertigkeit.strip() for fertigkeit in yaml_dict["Talent"][talent]["fertigkeiten"].split(",")]
-        fertigkeit_typen = []
+    for talent_key, talent in yaml_dict["Talent"].items():
+        talent_fertigkeiten = talent["fertigkeiten"].split(",")
+        talent_fertigkeiten = [f.strip() for f in talent_fertigkeiten]
+        fertigkeit_typen = set()  # NOTE: Liste ohne Doppelungen
         for fertigkeit in talent_fertigkeiten:
             fertigkeit_dict = yaml_dict["Übernatürliche-Fertigkeit"].get(fertigkeit)
-            if fertigkeit_dict:
-                fertigkeit_typ_nummer = int(fertigkeit_dict["printclass"])
-                fertigkeits_typen_uebernatuerlich_list = [fertigkeit_typ.strip() for fertigkeit_typ in yaml_dict["Einstellung"]["Fertigkeiten: Typen übernatürlich"]["inhalt"].split(",")]
-                fertigkeit_typ = fertigkeits_typen_uebernatuerlich_list[fertigkeit_typ_nummer]
-                fertigkeit_typen.append(fertigkeit_typ)
-        yaml_dict["Talent"][talent]["typ"] = fertigkeit_typen
-    #else:
-    #    talent["Typ"] = yaml_dict["Einstellung"]["Fertigkeiten: Typen profan"][int(talent["fertigkeiten"].split(",")[0]["printclass"])]
+            typ_key = "Fertigkeiten: Typen übernatürlich"
+            if not fertigkeit_dict:
+                fertigkeit_dict = yaml_dict["Fertigkeit"].get(fertigkeit)
+                typ_key = "Fertigkeiten: Typen profan"
+            if not fertigkeit_dict:
+                print(f"Fertigkeit '{fertigkeit}' von Talent '{talent_key}' nicht gefunden")
+                continue
+            fertigkeits_typen = yaml_dict["Einstellung"][typ_key]["inhalt"].split(",")
+            fertigkeits_typen_list = [ f.strip() for f in fertigkeits_typen ]
+            fertigkeit_typ = fertigkeits_typen_list[int(fertigkeit_dict["printclass"])]
+            fertigkeit_typen.add(fertigkeit_typ)
+        yaml_dict["Talent"][talent_key]["typ"] = list(fertigkeit_typen)
 
 def parse_entry(node):
     #if node.tag == "talent":
